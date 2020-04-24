@@ -1,0 +1,50 @@
+codecov:
+  require_ci_to_pass: yes
+
+flags:
+  unit:
+    # only test unit
+    paths:
+      - tests/unit
+      - src/*
+  integration:
+    # only test integration
+    paths:
+      - tests/integration
+      - src/*
+
+
+
+coverage:
+  precision: 2
+  round: down
+  range: "0...100"
+  status:
+    project:
+      unit:
+        target: 100%
+        flags: unit
+      integration:
+        target: 0%
+        flags: integration
+    patch:
+      unit:
+        target: 100%
+        flags: unit
+      integration:
+        target: 0%
+        flags: integration
+
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: no

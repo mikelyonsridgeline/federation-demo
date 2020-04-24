@@ -1,0 +1,4 @@
+[flake8]
+ignore = E501,W503,E302
+exclude = .git,.serverless,.tox,docs,node_modules,test,tests,layers,__init__.py,docs
+max-complexity = 10

@@ -1,0 +1,12 @@
+version: 0.2
+env:
+  parameter-store:
+    CREATE_UPDATE_LAMBDA: devops-CreateVersionUpdateLambda-v2
+phases:
+  install:
+    runtime-versions:
+      python: 3.7
+  build:
+    commands:
+      - aws lambda invoke --function $CREATE_UPDATE_LAMBDA --invocation-type RequestResponse --log-type Tail --payload '{"service":"'${SERVICE}'", "sha":"'${CODEBUILD_RESOLVED_SOURCE_VERSION}'"}' response.json
+      - test "$(cat response.json)" = "null" && rm response.json

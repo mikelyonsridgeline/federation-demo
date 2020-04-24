@@ -1,0 +1,15 @@
+version: 0.2
+env:
+  parameter-store:
+    ART_USERNAME: "Codebuild-Art-User"
+    ART_PASSWORD: "Codebuild-Art-Password"
+phases:
+  install:
+    runtime-versions:
+      python: 3.7
+    commands:
+      - pipenv update --dev
+  build:
+    commands:
+      - pipenv run pre-commit run --all-files --hook-stage push -c ./config/.pre-commit-config.yaml
+

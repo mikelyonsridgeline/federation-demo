@@ -1,0 +1,43 @@
+[[source]]
+name = "pypi"
+url = "https://${ART_USERNAME}:${ART_PASSWORD}@ridgelineapps.jfrog.io/ridgelineapps/api/pypi/pypi-remote/simple"
+verify_ssl = true
+
+[[source]]
+url = "https://${ART_USERNAME}:${ART_PASSWORD}@ridgelineapps.jfrog.io/ridgelineapps/api/pypi/ridgelineapps-dev/simple"
+verify_ssl = true
+name = "rl_artifactory"
+
+[dev-packages]
+black = "==19.3b0"
+pre-commit = "==1.18.0"
+pytest = "*"
+pytest-mock = "*"
+pytest-cov = "*"
+codecov = "*"
+flake8 = "*"
+isort = "*"
+cfn-lint = "*"
+
+[packages]
+pinecone = {editable = true,path = "./../../pinecone"}
+http-responses = {version = "*",index = "rl_artifactory"}
+service-template = {editable = true,path = "."} # TODO DEV: Replace with your service name
+cerberus = "*"
+
+[requires]
+python_version = "3.7"
+
+[scripts]
+# invoke the following commands in your pipenv shell using the following structure "pipenv run test-unit-coverage"
+test = "pytest -v tests/"
+test-coverage = "pytest --cov=./src -v tests/ --cov-report html:htmlcov/all_coverage_report --cov-report term:skip-covered"
+test-unit = "pytest -v tests/unit/"
+test-unit-coverage = "pytest --cov=./src -v tests/unit --cov-report html:htmlcov/unit_coverage_report --cov-report term:skip-covered"
+test-component = "pytest -v tests/component/"
+test-component-coverage = "pytest --cov=./src -v tests/component --cov-report html:htmlcov/component_coverage_report --cov-report term:skip-covered"
+test-int = "pytest -v tests/integration/"
+test-int-coverage = "pytest --cov=./src -v tests/integration --cov-report html:htmlcov/integration_coverage_report --cov-report term:skip-covered"
+test-api = "pytest -v tests/api/"
+test-api-coverage = "pytest --cov=./src -v tests/api --cov-report html:htmlcov/api_coverage_report --cov-report term:skip-covered"
+lint-fix = "pre-commit run --all-files --hook-stage push -c ./config/.pre-commit-config.yaml"

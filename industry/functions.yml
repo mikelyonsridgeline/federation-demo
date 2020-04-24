@@ -1,0 +1,410 @@
+# functions.yml file:
+#   This file will always be deployed after the resources.yml file
+#   Lambdas, API Gateways, and IAM Roles or anything dependent on those resources should live in this file
+#   Otherwise, they should go in the resources.yml file
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template for Service Template functions # TODO DEV: Replace with your service name
+
+Metadata:
+  Service:
+    Description: industry-fed-demo # TODO DEV: Replace with your service name
+
+# CloudFormation Parameters:
+Parameters:
+  TenantName: # TODO: remove this if not used
+    Type: String
+  #Profile: # TODO DEV: remove this if not used
+  #  Type: String
+  ApiName:
+    Type: String
+    Default: industry-fed-demo # TODO Dev: Replace with your service name kebab-lowercase
+
+  # cross-service dependencies
+  # Note: These parameters will all be looked up in SSM at deploy time.
+  #       The rl-tool will prefix the parameters with the TenantName
+  #       to get parameters specific to your environment. If a parameter
+  #       could not be found for your tenant, the account one will be used
+  #UserPoolARN: # TODO DEV: remove this if not used
+  #  Type: String
+  SecurityGroups: # TODO DEV: remove this if not used
+    Type: String
+  PrivateSubnets: # TODO DEV: remove this if not used
+    Type: String
+  #PublicSubnets: # TODO DEV: remove this if not used
+  #  Type: String
+
+  # resources.yml dependencies
+  # Note:
+  #   These parameters will all be looked up in SSM at deploy time.
+  #   The rl-tool will prefix the parameters with the TenantName
+  #   to get parameters specific to your environment. If a parameter
+  #   could not be found for your tenant, the account one will be used
+  IndustryFedProjectionStoreTableStreamArn: # TODO DEV: Replace with service name or remove if not used
+    Type: String
+  IndustryFedEventStoreTableArn: # TODO DEV: Replace with service name or remove if not used
+    Type: String
+  IndustryFedProjectionStoreTableArn: # TODO DEV: Replace with service name or remove if not used
+    Type: String
+
+  # VPC params for API Gateway
+  APIVPCEndpoint: # TODO DEV: remove this if not used
+    Type: String
+
+# Globals Section:
+#   Defines attributes for specific AWS::Serverless::* resource types
+#   These attributes will be applied to every instance of the resource type,
+#   They can be overriden by specifying the attribute in resource instance
+Globals:
+  Function:
+    Runtime: python3.7
+    Timeout: 30 # This value should never exceed 30
+    MemorySize: 2048
+    Tracing: Active
+    CodeUri: ./src # This defines where the code for your lambdas lives
+    Layers:
+      - !Ref DependencyLayer
+    Environment:
+      Variables:
+        # APP_CLIENT_ID: !Ref AppClientID
+        EVENT_STORE: !Sub IndustryFed-${TenantName}-events  # TODO DEV: Replace with your service name
+        PROJECTION_STORE: !Sub IndustryFed-${TenantName}-projections  # TODO DEV: Replace with your service name
+        REGION_NAME: !Ref AWS::Region
+        IS_DEPLOYED: 'true'
+        ENDPOINT_URL: !Sub https://dynamodb.${AWS::Region}.amazonaws.com
+        SERVICE_ID: 'idty'  # TODO DEV: Replace with your service id
+        STATUS: '200'
+    VpcConfig:
+      SecurityGroupIds: !Split [ ",", !Ref SecurityGroups ]
+      SubnetIds: !Split [ ",", !Ref PrivateSubnets ] # TODO DEV: If a lambda requires the public subnets, specify it in the specific lambda instance
+
+Resources:
+  # This layer is used to bundle all dependencies for a repo and inject them into each lambda defined in this file at runtime
+  DependencyLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+        ContentUri: dependencies/
+        CompatibleRuntimes:
+          - python3.7
+        RetentionPolicy: Delete
+
+  IndustryFedAPI:  # TODO DEV: Replace with your service name
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: v1
+      Cors:
+        AllowMethods: "'OPTIONS, GET, PUT'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+      EndpointConfiguration: Regional
+
+  IndustryFedPrivateApi:  # TODO DEV: Replace with your service name
+    Type: AWS::Serverless::Api
+    Properties:
+      Name:  !Sub ${TenantName}-IndustryFedPrivateApi  # TODO DEV: Replace with your service name
+      StageName: v1
+      Tags:
+        GCRox: WAFOFF
+      MethodSettings:
+        - HttpMethod: '*'
+          ResourcePath: /*
+          LoggingLevel: INFO
+          MetricsEnabled: true
+          DataTraceEnabled: true
+          ThrottlingBurstLimit: 5000
+          ThrottlingRateLimit: 10000
+      TracingEnabled: true
+      EndpointConfiguration: PRIVATE
+      DefinitionBody:
+        swagger: 2.0
+        x-amazon-apigateway-api-key-source: "HEADER"
+        schemes:
+          - https
+        x-amazon-apigateway-policy:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Effect: "Allow"
+              Principal: "*"
+              Action:
+                - "execute-api:Invoke"
+              Resource: "execute-api:/*/*/*"
+        x-amazon-apigateway-endpoint-configuration:
+          vpcEndpointIds:
+            - !Ref APIVPCEndpoint
+        paths:
+          /graphql:
+            post: # TODO DEV: Ensure Request type post/get/put/options
+              produces:
+                - "application/json"
+              parameters:
+                - name: proxy
+                  in: path
+                  required: true
+                  type: string
+              responses: {}
+              x-amazon-apigateway-integration:
+                uri:
+                  # TODO DEV: Ensure that the name of your function matches
+                  !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HandleGraphql.Arn}/invocations
+                httpMethod: POST # TODO DEV: Ensure Request type POST/GET/PUT/OPTIONS
+                type: aws_proxy
+
+          /health:
+            get: # TODO DEV: Ensure Request type post/get/put/options
+              produces:
+                - "application/json"
+              parameters:
+                - name: proxy
+                  in: path
+                  required: true
+                  type: string
+              responses: {}
+              x-amazon-apigateway-integration:
+                uri:
+                  # TODO DEV: Ensure that the name of your function matches
+                  !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HandleHealth.Arn}/invocations
+                httpMethod: GET # TODO DEV: Ensure Request type POST/GET/PUT/OPTIONS
+                type: aws_proxy
+
+
+          /seeding:
+            get: # TODO DEV: Ensure Request type post/get/put/options
+              produces:
+                - "application/json"
+              parameters:
+                - name: proxy
+                  in: path
+                  required: true
+                  type: string
+              responses: {}
+              x-amazon-apigateway-integration:
+                uri:
+                  # TODO DEV: Ensure that the name of your function matches
+                  !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HandleAPISeeding.Arn}/invocations
+                httpMethod: GET # TODO DEV: Ensure Request type POST/GET/PUT/OPTIONS
+                type: aws_proxy
+
+#          /captureDomainEvent:
+#            post: # TODO DEV: Ensure Request type post/get/put/options
+#              produces:
+#                - "application/json"
+#              parameters:
+#                - name: proxy
+#                  in: path
+#                  required: true
+#                  type: string
+#              responses: {}
+#              x-amazon-apigateway-integration:
+#                uri:
+#                  # TODO: Ensure that the name of your function matches
+#                  !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CaptureDomainEvent.Arn}/invocations
+#                httpMethod: POST # TODO DEV: Ensure Request type POST/GET/PUT/OPTIONS
+#                type: aws_proxy
+
+
+  HandleGraphql:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers.handle_graphql_lambda # TODO DEV: Ensure this matches the function defined in handlers.py
+      Role: !GetAtt FunctionRole.Arn
+      Events:
+        SeedingAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref IndustryFedAPI  # TODO DEV: Replace with your service name
+            Path: /graphql
+            Method: post
+        PrivateSeedingAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref IndustryFedPrivateApi  # TODO DEV: Replace with your service name
+            Path: /graphql
+            Method: post
+
+  HandleHealth:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers.handle_health # TODO DEV: Ensure this matches the function defined in handlers.py
+      Role: !GetAtt FunctionRole.Arn
+      Events:
+        HealthAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref IndustryFedAPI  # TODO DEV: Replace with your service name
+            Path: /health
+            Method: get
+        PrivateHealthAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref IndustryFedPrivateApi  # TODO DEV: Replace with your service name
+            Path: /health
+            Method: get
+
+  HandleAPISeeding:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers.handle_api_seeding_lambda # TODO DEV: Ensure this matches the function defined in handlers.py
+      Role: !GetAtt FunctionRole.Arn
+      Events:
+        SeedingAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref IndustryFedAPI  # TODO DEV: Replace with your service name
+            Path: /seeding
+            Method: get
+        PrivateSeedingAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref IndustryFedPrivateApi  # TODO DEV: Replace with your service name
+            Path: /seeding
+            Method: get
+
+#  CaptureDomainEvent:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      Handler: handlers.capture_domain_event # TODO DEV: Ensure this matches the function defined in handlers.py
+#      Role: !GetAtt FunctionRole.Arn
+#      Events:
+#        SQSDomainEvent:
+#          Type: SQS
+#          Properties:
+#            Queue: !GetAtt DomainEventQueue.Arn
+#        PrivateCaptureDomainEventAPI:
+#          Type: Api
+#          Properties:
+#            RestApiId: !Ref IndustryFedPrivateApi  # TODO DEV: Replace with your service name
+#            Path: /captureDomainEvent
+#            Method: post
+
+  IndexingHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handlers.handle_indexing_lambda # TODO DEV: Ensure this matches the function defined in handlers.py
+      Role: !GetAtt FunctionRole.Arn
+      Events:
+        DynamoStream:
+          Type: DynamoDB
+          Properties:
+            StartingPosition: LATEST
+            Stream: !Ref IndustryFedProjectionStoreTableStreamArn  # TODO DEV: Replace with your service name
+
+  # TODO Dev: Replace with your service name
+  IndustryFedGraphqlEndpoint:
+    Type: AWS::SSM::Parameter
+    Properties:
+      #Role: !GetAtt FunctionRole.Arn
+      Name: !Sub /${TenantName}/endpoints/v1/${ApiName}/graphql
+      # TODO Dev: Replace with your service name
+      Value: !Sub https://${IndustryFedPrivateApi}.execute-api.${AWS::Region}.amazonaws.com/v1/graphql
+      Type: String
+
+#  # TODO Dev: Replace with your service name
+#  IndustryFedSeedingEndpoint:
+#    Type: AWS::SSM::Parameter
+#    Properties:
+#      Name: !Sub /${TenantName}/endpoints/v1/${ApiName}/seeding
+#      # TODO Dev: Replace with your service name
+#      Value: !Sub https://${IndustryFedPrivateApi}.execute-api.${AWS::Region}.amazonaws.com/v1/seeding
+#      Type: String
+
+  # TODO Dev: Replace with your service name
+  IndustryFedHealthEndpoint:
+    Type: AWS::SSM::Parameter
+    Properties:
+      #Role: !GetAtt FunctionRole.Arn
+      Name: !Sub /${TenantName}/endpoints/v1/${ApiName}/health
+      # TODO Dev: Replace with your service name
+      Value: !Sub https://${IndustryFedPrivateApi}.execute-api.${AWS::Region}.amazonaws.com/v1/health
+      Type: String
+
+#  # TODO Dev: Replace with your service name
+#  IndustryFedCaptureDomainEventEndpoint:
+#    Type: AWS::SSM::Parameter
+#    Properties:
+#      Name: !Sub /${TenantName}/endpoints/v1/${ApiName}/captureDomainEvent
+#      # TODO Dev: Replace with your service name
+#      Value: !Sub https://${IndustryFedPrivateApi}.execute-api.${AWS::Region}.amazonaws.com/v1/captureDomainEvent
+#      Type: String
+
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: IndustryFedIAMRole  # TODO DEV: Replace with your service name
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              # TODO DEV: Add any additional IAM policies your service will require
+              - Effect: Allow
+                Action:
+                  - cloudwatch:*
+                  - xray:PutTelemetryRecords
+                  - xray:PutTraceSegments
+                  - ssm:GetParameter
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:DescribeStream
+                  - dynamodb:ListStreams
+                Resource: !Ref IndustryFedProjectionStoreTableStreamArn  # TODO DEV: Replace with your service name
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !Ref IndustryFedEventStoreTableArn # TODO DEV: Replace with your service name
+                  - !Ref IndustryFedProjectionStoreTableArn # TODO DEV: Replace with your service name
+                  - !Join
+                    - '/'
+                    - - !Ref IndustryFedProjectionStoreTableArn # TODO DEV: Replace with your service name
+                      - 'index'
+                      - '*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !Ref IndustryFedProjectionStoreTableArn # TODO DEV: Replace with your service name
+                  - !Join
+                    - '/'
+                    - - !Ref IndustryFedProjectionStoreTableArn # TODO DEV: Replace with your service name
+                      - 'index'
+                      - '*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - ec2:CreateNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DeleteNetworkInterface
+                Resource: "*"
+
+Outputs:
+  HealthEndpoint:
+    Value: !Sub https://${IndustryFedAPI}.execute-api.${AWS::Region}.amazonaws.com/v1/health  # TODO DEV: Replace with your service name
+  SeedingEndpoint:
+    Value: !Sub https://${IndustryFedAPI}.execute-api.${AWS::Region}.amazonaws.com/v1/seeding  # TODO DEV: Replace with your service name
+  GraphqlEndpoint:
+    Value: !Sub https://${IndustryFedAPI}.execute-api.${AWS::Region}.amazonaws.com/v1/graphql  # TODO DEV: Replace with your service name
+  PrivateHealthEndpoint:
+    Value: !Sub https://${IndustryFedPrivateApi}.execute-api.${AWS::Region}.amazonaws.com/v1/health  # TODO DEV: Replace with your service name
+  PrivateGraphqlEndpoint:
+    Value: !Sub https://${IndustryFedPrivateApi}.execute-api.${AWS::Region}.amazonaws.com/v1/graphql  # TODO DEV: Replace with your service name

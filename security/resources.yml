@@ -1,0 +1,133 @@
+# resources.yml file:
+#   This file will always be deployed before the functions.yml file
+#   All resources that aren't your Lambdas, API Gateways, and IAM Roles should live in this file
+#   Note: If a resource is dependent on one of the Lambdas, API Gateways or IAM Roles,
+#     it should live in the functions.yml files+
+
+#   IF NO SUPPORTING RESOURCES ARE REQUIRED, THIS FILE CAN BE DELETED
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template for Service Template resources  # TODO DEV: Replace with your service name
+
+Metadata:
+  Service:
+    Name: security-fed
+    Description: security-fed # TODO DEV: Replace with your service name
+
+# CloudFormation Parameters:
+Parameters:
+  TenantName: # TODO: remove this if not used
+    Type: String
+  #Profile: # TODO: remove this if not used
+  #  Type: String
+
+# Resources Section:
+#   Add any additional resources your service needs in this section
+Resources:
+  EventStoreTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub SecurityFed-${TenantName}-events  # TODO DEV: Replace with your service name
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+  ProjectionStoreTable:
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: pk
+        AttributeType: S
+      - AttributeName: sk
+        AttributeType: S
+      - AttributeName: reference_id
+        AttributeType: S
+      - AttributeName: field_s
+        AttributeType: S
+      - AttributeName: field_n
+        AttributeType: N
+      KeySchema:
+      - AttributeName: pk
+        KeyType: HASH
+      - AttributeName: sk
+        KeyType: RANGE
+      TableName: !Sub SecurityFed-${TenantName}-projections  # TODO DEV: Replace with your service name
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      GlobalSecondaryIndexes:
+        - IndexName: sk-field-string
+          KeySchema:
+            - AttributeName: sk
+              KeyType: HASH
+            - AttributeName: field_s
+              KeyType: RANGE
+          Projection:
+            ProjectionType: KEYS_ONLY
+        - IndexName: sk-field-numeric
+          KeySchema:
+            - AttributeName: sk
+              KeyType: HASH
+            - AttributeName: field_n
+              KeyType: RANGE
+          Projection:
+            ProjectionType: KEYS_ONLY
+        - IndexName: sk-only
+          KeySchema:
+            - AttributeName: sk
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: reference_id
+          KeySchema:
+            - AttributeName: reference_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: KEYS_ONLY
+    Type: AWS::DynamoDB::Table
+
+
+  # SSM Parameters:
+  #   These allow you service to export resource attributes like ARN's so your functions.yml file
+  #   and other services can reference them. Prefixing TenantName to the parameter name ensures
+  #   the parameter is created specifically for your environment when you deploy
+
+
+  SecurityFedProjectionStoreTableStreamArn: # TODO DEV: Replace with your service name
+    Type: AWS::SSM::Parameter
+    Properties:
+      Value: !GetAtt ProjectionStoreTable.StreamArn
+      Type: String
+      Name: !Sub ${TenantName}-SecurityFedProjectionStoreTableStreamArn # TODO DEV: Replace with your service name
+
+  SecurityFedEventStoreTableArn:  # TODO DEV: Replace with your service name
+    Type: AWS::SSM::Parameter
+    Properties:
+      Value: !GetAtt EventStoreTable.Arn
+      Type: String
+      Name: !Sub ${TenantName}-SecurityFedEventStoreTableArn  # TODO DEV: Replace with your service name
+
+  SecurityFedProjectionStoreTableArn:  # TODO DEV: Replace with your service name
+    Type: AWS::SSM::Parameter
+    Properties:
+      Value: !GetAtt ProjectionStoreTable.Arn
+      Type: String
+      Name: !Sub ${TenantName}-SecurityFedProjectionStoreTableArn  # TODO DEV: Replace with your service name
+
+  # SSM Parameter Template
+
+  # SecurityFedParameter:  # TODO DEV: Replace with your service name and parameter name
+  #   Type: AWS::SSM::Parameter
+  #   Properties:
+  #     Value: !GetAtt Resource.Attribute # TODO DEV: Replace with the resource and attribute you are trying to access
+  #     Type: String
+  #     Name: !Sub ${TenantName}-SecurityFedParameterAttribute  # TODO DEV: Replace with your service name and parameter name

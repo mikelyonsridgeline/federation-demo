@@ -1,0 +1,19 @@
+version: 0.2
+env:
+  parameter-store:
+    ART_USERNAME: "Codebuild-Art-User"
+    ART_PASSWORD: "Codebuild-Art-Password"
+    CODECOV_TOKEN: "Codecov-Token-Pinecone-Service-Template"  # TODO DEV: rename token for service name and request token in #ask-devops channel
+phases:
+  install:
+    runtime-versions:
+      python: 3.7
+    commands:
+#      - pipenv install --dev
+  build:
+    commands:
+      - echo "Integration Tests Under Construction :P"
+#      - pipenv run pytest --cov-config=.coveragerc --cov=./src -v tests/integration/ --cov-report term-missing --cov-report  xml:integration.xml
+#    finally:
+#      - curl -s https://codecov.io/bash | bash -s - -t $CODECOV_TOKEN -f integration.xml -F integration
+

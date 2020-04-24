@@ -1,0 +1,7 @@
+# TODO DEV: remove the following line and uncomment the true owners below
+*       @ridgelineapps/platform
+
+# *	@insert_repo_owners_here # TODO DEV: Update with repo owners
+# /config @ridgelineapps/platform
+# /pipelines @ridgelineapps/devops-codeowners
+# /serverless.yml @ridgelineapps/devops-codeowners @insert_repo_owners_here # TODO DEV: Update with repo owners

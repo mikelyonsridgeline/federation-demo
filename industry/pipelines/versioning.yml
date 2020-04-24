@@ -1,0 +1,26 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.7
+  build:
+    commands:
+      - . ./pipelines/export_sem_ver.sh
+      - export BUILD_METADATA=+$PIPELINE_VERSION.$CODEBUILD_BUILD_NUMBER
+      - export CURRENT_BUILD=$SEM_VER$BUILD_METADATA
+      - >
+        aws lambda invoke --function $UPDATE_JIRA_LAMBDA --invocation-type RequestResponse --log-type Tail
+        --payload '{"repo":"'${GIT_REPO}'", "sha":"'${CODEBUILD_RESOLVED_SOURCE_VERSION}'", "version":"'${CURRENT_BUILD}'"}'
+        update-jira-response.json
+      - test "$(cat update-jira-response.json)" = "null"
+      - >
+        aws lambda invoke --function $TAG_LAMBDA --invocation-type RequestResponse --log-type Tail
+        --payload '{"clone_url":"'${CLONE_URL}'", "sha":"'${CODEBUILD_RESOLVED_SOURCE_VERSION}'", "version":"'${CURRENT_BUILD}'"}'
+        update-current-build-response.json
+      - test "$(cat update-current-build-response.json)" = "null"
+      - >
+        aws lambda invoke --function $TAG_LAMBDA --invocation-type RequestResponse --log-type Tail
+        --payload '{"clone_url":"'${CLONE_URL}'", "sha":"'${CODEBUILD_RESOLVED_SOURCE_VERSION}'", "version":"'${SEM_VER}'"}'
+        update-sem-ver-response.json
+      - test "$(cat update-sem-ver-response.json)" = "null"

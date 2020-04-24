@@ -1,0 +1,41 @@
+version: 0.2
+env:
+  parameter-store:
+    GIT_SECRET_TOKEN: "devops-GithubOauthToken"
+    ART_USERNAME: "Codebuild-Art-Username"
+    ART_EMAIL: "Codebuild-Art-Email"
+    ART_PASSWORD: "Codebuild-Art-Password"
+    ARTIFACT_STORE: "devops-SAMArtifactStoreBucket"
+phases:
+  install:
+    runtime-versions:
+      python: 3.7
+      nodejs: 10
+    commands:
+      - npm config set registry https://ridgelineapps.jfrog.io/ridgelineapps/api/npm/ridgelineapps-npm-virtual/
+      - curl -u$ART_EMAIL:$ART_PASSWORD https://ridgelineapps.jfrog.io/ridgelineapps/api/npm/auth >> ~/.npmrc
+      - npm i -g rl-tool
+      - pip install aws-sam-cli
+      - pip install pipenv
+  build:
+    commands:
+      - export TEMPLATE_NAME=`echo $TEMPLATE | sed 's/.yml//g'`
+      - export S3_PREFIX=production-artifacts/$SERVICE/$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - export PACKAGED_TEMPLATE_PATH=packaged-$TEMPLATE
+
+      # Package deployment
+      - chmod +x ./pipelines/assume_role.sh
+      - ./pipelines/assume_role.sh $PROFILE
+      - rl gen --template $TEMPLATE --assumedProfile $PROFILE --tenant $TENANT_NAME --format json --region $REGION
+      - rl build --template $TEMPLATE --assumedProfile $PROFILE --region $REGION
+      - rm -rf ~/.aws/config && rm -rf ~/.aws/credentials
+      - sam package --s3-bucket $ARTIFACT_STORE --s3-prefix $S3_PREFIX/$TEMPLATE_NAME --output-template-file $PACKAGED_TEMPLATE_PATH
+      - aws s3 cp $PACKAGED_TEMPLATE_PATH s3://$ARTIFACT_STORE/$S3_PREFIX/$TEMPLATE
+      - aws s3 cp service.json s3://$ARTIFACT_STORE/$S3_PREFIX/service.json
+      # TODO DEV: If your service requires a post deployment python script, place it in the scripts/rl-hooks folder and uncomment the line below
+      # - aws s3 cp scripts/rl-hooks s3://$ARTIFACT_STORE --recursive
+
+artifacts:
+  files:
+    - cfconfig.json
+    - $PACKAGED_TEMPLATE_PATH
