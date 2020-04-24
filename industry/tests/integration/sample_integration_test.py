@@ -1,6 +1,8 @@
 from unittest.mock import MagicMock
 
 from industry.models.aggregates.industry_aggregate import IndustryAggregate
+from industry.models.results.industry_result import IndustryResult
+from pinecone.store import Repository
 
 from tests.resources.gql_constants import GraphQLSignatures
 from tests.resources.gql_constants import GraphQLVariables
@@ -28,7 +30,14 @@ def test_federation(client):
     # # Note to Devs: be sure to use the 'variables' keyword arg here. Relying on
     # # position will lead to unexpected behavior.
     from handlers import handle_api_seeding_lambda
-    handle_api_seeding_lambda(None, {})
+    results = [IndustryResult(aggregate_id='test:5678', sector='Testing'), IndustryResult(aggregate_id='test:1234', sector='Testing')]
+    class repo:
+        class reader:
+            @staticmethod
+            def get(*args, **kwargs):
+                return results.pop()
+
+    Repository.get_instance = repo
     actual_output = client.execute(signature, variables=variables_dict)
     expected_output = {}
     #

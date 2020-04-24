@@ -21,4 +21,5 @@ class SecurityResult(Result):
 
     class Meta:
         aggregate_id = TextField(required=True)
+        ticker = TextField()
         industry = IndustryResultNode()

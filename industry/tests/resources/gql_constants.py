@@ -27,7 +27,7 @@ class GraphQLSignatures:
 
 
 class GraphQLVariables:
-    VARIABLE_STUB = {"representations":[{"__typename":"IndustryResultNode","aggregateId":"idty:industry:Ei3QrcCzT7GiEpGgbTdh4A=="},{"__typename":"IndustryResultNode","aggregateId":"idty:industry:rCIMEH7QTeCqzN9BVSRxFQ=="},{"__typename":"IndustryResultNode","aggregateId":"idty:industry:oKDFqSrNQfWqcQQZ6JxZYQ=="},{"__typename":"IndustryResultNode","aggregateId":"idty:industry:Ei3QrcCzT7GiEpGgbTdh4A=="},{"__typename":"IndustryResultNode","aggregateId":"idty:industry:Ei3QrcCzT7GiEpGgbTdh4A=="}]}
+    VARIABLE_STUB = {"representations":[{"__typename":"IndustryResultNode","aggregateId":'test:1234'},{"__typename":"IndustryResultNode","aggregateId":'test:5678'}]}
 
 
 class GraphQLExpectedOutput:

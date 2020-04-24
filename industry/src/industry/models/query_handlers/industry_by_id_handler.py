@@ -22,9 +22,12 @@ class IndustryByIdHandler(QueryHandler):
         Returns:
             result (SampleResult): A result commuication object.
         """
-        industry = repository.reader.all(IndustryAggregate).all_results[0]
-        result = IndustryResult(aggregate_id=industry.aggregate_id, sector=industry.sector)
-        return result
+        industry = repository.reader.get(aggregate_class=IndustryAggregate, aggregate_id=query.aggregate_id)
+        try:
+            result = IndustryResult(aggregate_id=industry.aggregate_id, sector=industry.sector)
+            return result
+        except AttributeError:
+            return None
 
     @staticmethod
     def define_query_class():

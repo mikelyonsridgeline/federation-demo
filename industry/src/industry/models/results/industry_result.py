@@ -16,7 +16,7 @@ class IndustryResult(Result):
         sector = TextField()
 
     @staticmethod
-    def resolve_reference(*args, **kwargs):
+    def resolve_reference():
         from industry.models.query_handlers.industry_by_id_handler import IndustryByIdHandler
         return IndustryByIdHandler
 
