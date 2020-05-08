@@ -50,12 +50,16 @@ def handle_health(event, context):
 
 def handle_api_seeding_lambda(event, context):
     handle_initialize(event, context)
+    technology_id = "idty:industry:g6Bsny-gSIef24amh4s2xw=="
+    energy_id = "idty:industry:BPBv-m8bRs2eOjXLddOQ3Q=="
+    consumer_id = "idty:industry:wFnxW-fdQISUuyCFH-56Mw=="
+
     securities = [
-        SecurityAggregate(aggregate_id=SecurityAggregate.generate_id(), ticker="GOOG", industry_id="idty:industry:Ei3QrcCzT7GiEpGgbTdh4A=="),
-        SecurityAggregate(aggregate_id=SecurityAggregate.generate_id(), ticker="FB", industry_id="idty:industry:Ei3QrcCzT7GiEpGgbTdh4A=="),
-        SecurityAggregate(aggregate_id=SecurityAggregate.generate_id(), ticker="NFLX", industry_id="idty:industry:Ei3QrcCzT7GiEpGgbTdh4A=="),
-        SecurityAggregate(aggregate_id=SecurityAggregate.generate_id(), ticker="OIL", industry_id="idty:industry:oKDFqSrNQfWqcQQZ6JxZYQ=="),
-        SecurityAggregate(aggregate_id=SecurityAggregate.generate_id(), ticker="LULU", industry_id="idty:industry:rCIMEH7QTeCqzN9BVSRxFQ=="),
+        SecurityAggregate(aggregate_id=SecurityAggregate.generate_id(), ticker="GOOG", industry_id=technology_id),
+        SecurityAggregate(aggregate_id=SecurityAggregate.generate_id(), ticker="FB", industry_id=technology_id),
+        SecurityAggregate(aggregate_id=SecurityAggregate.generate_id(), ticker="NFLX", industry_id=technology_id),
+        SecurityAggregate(aggregate_id=SecurityAggregate.generate_id(), ticker="OIL", industry_id=energy_id),
+        SecurityAggregate(aggregate_id=SecurityAggregate.generate_id(), ticker="LULU", industry_id=consumer_id),
     ]
 
     LOGGER.info("Seeding Data Conversion Testing Service")

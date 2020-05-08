@@ -11,7 +11,7 @@ class AllIndustriesQueryHandler(ConnectionQueryHandler):
     """Defines SampleQueryHandler for handling SampleQuery"""
 
     @staticmethod
-    def handle_query(repository: Repository, **kwargs) -> IndustryResult:
+    def handle_query(query, repository: Repository) -> IndustryResult:
         """Handle a SampleQuery and return a SampleResult.
 
         Args:

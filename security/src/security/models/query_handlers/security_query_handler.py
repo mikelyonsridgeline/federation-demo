@@ -2,7 +2,6 @@
 from typing import List
 
 from pinecone.interface.handlers.connection_query_handler import ConnectionQueryHandler
-from pinecone.interface.handlers.query_handler import QueryHandler
 from pinecone.model.field_values.composite.composite import Composite
 from pinecone.store import Repository
 
@@ -15,7 +14,7 @@ class SecurityQueryHandler(ConnectionQueryHandler):
     """Defines SampleQueryHandler for handling SampleQuery"""
 
     @staticmethod
-    def handle_query(repository: Repository, **kwargs) -> List[SecurityResult]:
+    def handle_query(query, repository: Repository) -> List[SecurityResult]:
         """Handle a SampleQuery and return a SampleResult.
 
         Args:

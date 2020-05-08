@@ -3,10 +3,14 @@ class GraphQLSignatures:
         query  {
             industries {
                 edges {
+                    cursor
                     node {
                         id
                         sector
                     } 
+                }
+                pageInfo {
+                    hasNextPage 
                 }
             }
         }

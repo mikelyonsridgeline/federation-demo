@@ -21,7 +21,7 @@ cfn-lint = "*"
 ipython = "*"
 
 [packages]
-pinecone = {editable = true,path = "./../../pinecone"}
+pinecone = {version = "==1.3.1",index = "rl_artifactory"}
 http-responses = {version = "*",index = "rl_artifactory"}
 service-template = {editable = true,path = "."} # TODO DEV: Replace with your service name
 cerberus = "*"
