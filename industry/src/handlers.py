@@ -22,6 +22,7 @@ from pinecone.store import Repository
 
 from industry import models
 from industry.models import query_handlers
+from industry.models import command_handlers
 from industry.models.aggregates.industry_aggregate import IndustryAggregate
 
 LOGGER = logging.getLogger()
@@ -33,7 +34,7 @@ handle_container_initialize(models)
 
 
 def handle_graphql_lambda(event, context):
-    result = handle_graphql(event, context, [query_handlers])
+    result = handle_graphql(event, context, [command_handlers, query_handlers])
     return handle_response(result, LOGGER)
 
 

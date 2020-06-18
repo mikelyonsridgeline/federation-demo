@@ -20,10 +20,11 @@ isort = "*"
 cfn-lint = "*"
 
 [packages]
-pinecone = {version = "==1.3.1",index = "rl_artifactory"}
+pinecone = {editable = true,path = "./../../pinecone"}
 http-responses = {version = "*",index = "rl_artifactory"}
 service-template = {editable = true,path = "."} # TODO DEV: Replace with your service name
 cerberus = "*"
+rl-requests = {editable = true,path = "./../../rl-requests"}
 
 [requires]
 python_version = "3.7"

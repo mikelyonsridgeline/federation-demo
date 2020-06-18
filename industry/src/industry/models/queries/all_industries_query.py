@@ -3,7 +3,7 @@ from pinecone.model.communication.connection_query import ConnectionQuery
 
 from industry.models.results.industry_result import IndustryResult
 from pinecone.model.communication.query import Query
-from pinecone.model.fields import TextField
+from pinecone.model.fields import TextField, IDField
 
 
 class AllIndustriesQuery(ConnectionQuery):
@@ -18,4 +18,4 @@ class AllIndustriesQuery(ConnectionQuery):
 class IndustryById(Query):
 
     class Meta:
-        aggregate_id = TextField()
+        id = IDField(required=True)

@@ -24,7 +24,7 @@ class IndustryByIdHandler(QueryHandler):
         """
         industry = repository.reader.get(aggregate_class=IndustryAggregate, aggregate_id=query.aggregate_id)
         try:
-            result = IndustryResult(aggregate_id=industry.aggregate_id, sector=industry.sector)
+            result = IndustryResult(id=industry.aggregate_id, aggregate_id=industry.aggregate_id, sector=industry.sector)
             return result
         except AttributeError:
             return None

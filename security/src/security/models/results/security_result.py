@@ -12,6 +12,7 @@ class IndustryResultNode(CompositeField):
 
     class Meta:
         aggregate_id = external(TextField())
+        some_nique_field = TextField()
 
 
 class SecurityResult(Result):

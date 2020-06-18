@@ -37,6 +37,7 @@ Resources:
           AttributeType: S
         - AttributeName: sk
           AttributeType: S
+        -
       KeySchema:
         - AttributeName: pk
           KeyType: HASH

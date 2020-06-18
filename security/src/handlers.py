@@ -28,7 +28,7 @@ LOGGER.setLevel(logging.INFO)
 from security import models
 handle_container_initialize(models)
 
-
+@IdempotentHTTPHandler("")
 def handle_graphql_lambda(event, context):
     result = handle_graphql(event, context, [query_handlers])
     return handle_response(result, LOGGER)

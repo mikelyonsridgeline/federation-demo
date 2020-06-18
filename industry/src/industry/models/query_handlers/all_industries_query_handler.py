@@ -24,7 +24,7 @@ class AllIndustriesQueryHandler(ConnectionQueryHandler):
         industries = repository.reader.all(IndustryAggregate).all_results
         print(f"industries: {industries}")
         return [
-            IndustryResult(aggregate_id=industry.aggregate_id, sector=industry.sector)
+            IndustryResult(id=industry.aggregate_id, aggregate_id=industry.aggregate_id, sector=industry.sector)
             for industry in industries
         ]
 

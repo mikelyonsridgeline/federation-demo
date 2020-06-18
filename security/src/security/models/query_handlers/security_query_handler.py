@@ -15,26 +15,13 @@ class SecurityQueryHandler(ConnectionQueryHandler):
 
     @staticmethod
     def handle_query(query, repository: Repository) -> List[SecurityResult]:
-        """Handle a SampleQuery and return a SampleResult.
-
-        Args:
-            query (SecurityQuery): A query communication object.
-            repository (Repository): Pinecone persistence object.
-
-        Returns:
-            result (SampleResult): A result commuication object.
-        """
         securities = repository.reader.all(SecurityAggregate).all_results
-        print(f"securities: {securities}")
-        print(f"vars: {vars(securities[0])}")
         results = [
             SecurityResult(aggregate_id=security.aggregate_id,
                            ticker=security.ticker,
                            industry=Composite(aggregate_id=security.industry_id))
             for security in securities
         ]
-        print(f"results: {results}")
-        print(f"vars: {vars(results[0])}")
         return results
 
     @staticmethod
