@@ -9,8 +9,8 @@ npm i
 ### run
 ```
 pipenv shell
-python demo/security.py
-python demo/industry.py
+python graphene-demo/security.py
+python graphene-demo/industry.py
 node gateway.js
 ```
 then head to http://localhost:5000/ and this a try:
