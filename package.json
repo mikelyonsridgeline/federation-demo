@@ -12,7 +12,7 @@
     "aws-sdk": "^2.907.0",
     "graphql": "^14.7.0",
     "i": "^0.3.6",
-    "serverless": "^1.83.3",
+    "serverless": "^3.25.1",
     "uuid": "^3.4.0"
   },
   "devDependencies": {
